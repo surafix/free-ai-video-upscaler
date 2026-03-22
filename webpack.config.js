@@ -75,6 +75,6 @@ module.exports = {
         allowedHosts: "all",
     },
 
-    mode: 'development'
+    mode: 'production'
 
 };
