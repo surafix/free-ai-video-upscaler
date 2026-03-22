@@ -1,130 +1,71 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SurafIX Neural Studio</title>
     
-    <script src="https://cdn.tailwindcss.com" crossorigin="anonymous"></script>
-    <script>tailwind.config = { darkMode: 'class' }</script>
-    
     <script defer src="main.js"></script>
     
     <style>
+        :root { --bg: #111827; --surface: #1f2937; --text: #f3f4f6; --accent: #3b82f6; }
+        body { background-color: var(--bg); color: var(--text); font-family: system-ui, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 4px; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        /* Layout */
+        #sidebar { width: 350px; background-color: var(--surface); padding: 24px; border-right: 1px solid #374151; overflow-y: auto; display: flex; flex-direction: column; z-index: 50; }
+        #workspace { flex-grow: 1; background-color: #000; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        
+        /* Hide original elements we don't need, BUT KEEP THEM IN DOM so JS doesn't crash! */
+        #title, #hero-text, #footer { display: none !important; }
+        
+        /* Buttons */
+        .btn { background: var(--accent); color: white; padding: 12px 20px; border-radius: 6px; border: none; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; transition: 0.2s; }
+        .btn:hover { opacity: 0.8; }
+        .btn-outline-primary { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+        
+        /* Quality Radio Buttons */
+        .btn-check { display: none; }
+        .btn-check:checked + label { background: var(--accent); color: white; }
+        label.btn { display: inline-block; width: 31%; text-align: center; margin: 1%; background: #374151; font-size: 12px; padding: 10px 0; border: 1px solid #4B5563; }
+
+        /* Canvas */
+        #image-compare-outer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+        #image-compare { width: 100%; max-width: 1200px; aspect-ratio: 16/9; }
+        canvas { object-fit: contain; }
     </style>
 </head>
 
-<body x-data="{}" class="bg-gray-900 text-gray-100 h-screen overflow-hidden flex">
+<body x-data="{}" style="display: none;">
+    
+    <h1 id="title"></h1>
+    <p id="hero-text"></p>
+    <div id="footer"></div>
 
-    <aside class="w-80 shrink-0 bg-gray-800 border-r border-gray-700 flex flex-col transition-all duration-300 relative z-20 shadow-2xl">
-        <div class="p-6 flex-grow flex flex-col">
-            <h1 class="text-2xl font-bold tracking-wider text-blue-400 mb-8">SurafIX <span class="text-white text-sm font-light uppercase tracking-widest block opacity-70 mt-1">Neural Studio</span></h1>
+    <div id="sidebar">
+        <h2 style="color: var(--accent); font-size: 24px; font-weight: bold; margin-bottom: 30px; margin-top: 0;">SurafIX <span style="color: white; font-size: 12px; font-weight: normal; letter-spacing: 2px; opacity: 0.7; display: block; margin-top: 4px;">NEURAL STUDIO</span></h2>
+
+        <div id="file-load-panel" x-show="$store.state === 'init'">
+            <label style="font-size: 14px; color: #9ca3af; margin-bottom: 8px; display: block;">Source Media</label>
+            <button type="button" class="btn" id="input-button" onclick="chooseFile(this)" style="background: #111827; border: 1px dashed #4b5563; color: #d1d5db; padding: 20px;">+ Choose Video File</button>
+        </div>
+
+        <div id="preview" x-show="$store.state === 'preview'">
             
-            <div id="file-load-panel" class="mb-6" x-show="$store.state === 'init'">
-                <label class="block text-sm font-medium text-gray-400 mb-2">Source Media</label>
-                <button type="button" id="input-button" onclick="chooseFile(this)" class="w-full py-4 bg-gray-900 border border-gray-600 border-dashed rounded-lg text-gray-300 hover:bg-gray-700 hover:border-blue-500 transition-all font-mono text-sm shadow-inner">
-                    + Upload Video
-                </button>
+            <div style="background: #111827; padding: 15px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #374151;">
+                <p style="font-size: 10px; color: #9ca3af; text-transform: uppercase;">Active File:</p>
+                <p style="font-family: monospace; color: var(--accent); font-size: 14px; word-break: break-all; margin: 4px 0;" x-text="$store.filename"></p>
+                <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">Output: <span x-text="$store.width*2" style="color: white;"></span>x<span x-text="$store.height*2" style="color: white;"></span> (~<span x-text="$store.size" style="color: white;"></span>)</p>
             </div>
 
-            <div class="mb-6 bg-gray-900 p-4 rounded-lg border border-gray-700 shadow-inner" x-show="$store.state !== 'init' && $store.state !== 'unsupported'">
-                <div class="text-xs text-gray-400 mb-1 uppercase tracking-widest">Active File:</div>
-                <div class="font-mono text-sm text-blue-400 truncate" x-text="$store.filename"></div>
-                <div class="text-xs text-gray-500 mt-2">
-                    Output: <span x-text="$store.width*2" class="text-white"></span>x<span x-text="$store.height*2" class="text-white"></span>
-                </div>
-                <div class="text-xs text-gray-500 mt-1">
-                    Est. Size: ~<span x-text="$store.size" class="text-white"></span>
-                </div>
-            </div>
-
-            <div id="preview" class="mb-8" x-show="$store.state === 'preview'">
-                <label class="block text-sm font-medium text-gray-400 mb-2">Neural Network Weights</label>
-                <div class="flex gap-2 bg-gray-900 p-1 rounded-lg border border-gray-700">
-                    <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="options" id="option1" value="small" onclick="switchNetworkSize(this);" class="peer hidden">
-                        <div class="py-2 text-center text-xs font-bold rounded-md peer-checked:bg-blue-600 peer-checked:text-white text-gray-400 transition-all">Small</div>
-                    </label>
-                    <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="options" id="option2" value="medium" onclick="switchNetworkSize(this);" class="peer hidden" checked>
-                        <div class="py-2 text-center text-xs font-bold rounded-md peer-checked:bg-blue-600 peer-checked:text-white text-gray-400 transition-all">Medium</div>
-                    </label>
-                    <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="options" id="option3" value="large" onclick="switchNetworkSize(this);" class="peer hidden">
-                        <div class="py-2 text-center text-xs font-bold rounded-md peer-checked:bg-blue-600 peer-checked:text-white text-gray-400 transition-all">Large</div>
-                    </label>
-                </div>
-            </div>
-
-            <div class="mt-auto">
-                <button type="button" onclick="initRecording()" x-show="$store.state === 'preview' && $store.target === 'blob'" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all">
-                    Start AI Upscale
-                </button>
-                
-                <button type="button" onclick="initRecording()" x-show="$store.state === 'preview' && $store.target === 'writer'" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white rounded font-bold transition-all">
-                    Choose Save Location
-                </button>
-
-                <div id="info" x-show="$store.state === 'processing'" class="w-full bg-gray-900 rounded-lg p-4 border border-blue-500/30">
-                    <div class="flex justify-between text-xs mb-2">
-                        <span class="text-blue-400 font-bold tracking-widest uppercase animate-pulse">Rendering</span>
-                        <span class="text-gray-400 font-mono" x-text="$store.eta"></span>
-                    </div>
-                    <div id="progress" class="w-full bg-gray-800 rounded-full h-2">
-                        <div class="bg-blue-500 h-2 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(59,130,246,0.8)]" x-bind:style="{width: $store.progress + '%'}"></div>
-                    </div>
-                </div>
-
-                <div x-show="$store.state === 'complete'" class="space-y-3">
-                    <a x-bind:href="$store.download_url" x-bind:download="$store.download_name" x-show="$store.target=='blob'" class="block">
-                        <button type="button" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white rounded font-bold shadow-[0_0_15px_rgba(22,163,74,0.4)]">
-                            Download Video
-                        </button>
-                    </a>
-                    <button type="button" onclick="location.reload();" class="w-full py-2 bg-gray-700 hover:bg-gray-600 text-white rounded text-sm transition-all">
-                        Process Another
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="p-4 bg-gray-950 text-xs font-mono border-t border-gray-700 flex justify-between">
-            <span class="text-gray-500">Engine: WebGPU</span>
-            <span class="text-green-400 uppercase tracking-widest" x-text="$store.state"></span>
-        </div>
-    </aside>
-
-    <main class="flex-grow bg-black relative flex items-center justify-center p-8 overflow-hidden">
-        
-        <div id="unsupported-panel" style="display:none;"></div>
-        <div id="error-panel" style="display:none;"></div>
-
-        <div id="loading-panel" x-show="$store.state === 'loading'" class="absolute z-30 flex flex-col items-center">
-            <svg class="animate-spin h-10 w-10 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            <p class="font-mono text-sm text-blue-400 tracking-widest">BOOTING NEURAL ENGINE</p>
-        </div>
-
-        <div id="start-panel" class="relative w-full h-full flex items-center justify-center z-20" x-show="$store.state === 'preview' || $store.state === 'processing' || $store.state === 'complete'" style="display: none;">
-            
-            <div id="image-compare-outer" class="w-full h-full flex items-center justify-center">
-                <div id="image-compare">
-                    <canvas id="original"></canvas>
-                    <canvas id="upscaled"></canvas>
-                </div>
-            </div>
-            
-            <button onclick="fullScreenPreview()" x-show="$store.state === 'preview'" class="absolute top-4 right-4 bg-black/60 hover:bg-black/90 p-2 rounded text-white z-30 transition-all border border-gray-600 backdrop-blur-sm">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
-            </button>
-        </div>
-    </main>
-
-    <script>
-        console.log("%c[SurafIX Engine]: WebGPU Backend Initialized Successfully 🚀", "color: #3b82f6; font-size: 14px; font-weight: bold; font-family: monospace; padding: 4px; border: 1px solid #3b82f6; border-radius: 4px;");
-        console.log("%c[Status]: Neural weights mapped. Awaiting source media...", "color: #10b981; font-family: monospace; font-size: 12px;");
-    </script>
-</body>
-</html>
+            <div id="settings" style="margin-bottom: 24px;">
+                <p style="font-size: 14px; color: #9ca3af; margin-bottom: 10px;">Neural Network Weights</p>
+                <div style="background: #111827; padding: 4px; border-radius: 8px; border: 1px solid #374151;">
+                    <input type="radio" class="btn-check" name="options" id="option1" value="small" onclick="switchNetworkSize(this);" autocomplete="off">
+                    <label class="btn btn-outline-primary" for="option1">Small</label>
+                    
+                    <input type="radio" class="btn-check" name="options" id="option2" value="medium" onclick="switchNetworkSize(this);" autocomplete="off" checked>
+                    <label class="btn btn-outline-primary" for="option2">Medium</label>
+                    
+                    <input type="radio" class="btn-check" name="options"
