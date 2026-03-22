@@ -47,6 +47,22 @@
 
         /* Loading Spinner */
         #loading-panel img { filter: invert(1); width: 80px; }
+        <div style="margin-top: 20px;">
+    <p style="font-size: 14px; color: #9ca3af; margin-bottom: 10px;">Neural Optimization</p>
+    <div style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-outline-primary" style="flex: 1; font-size: 12px; padding: 8px;" onclick="setModelType('realistic')">Realistic</button>
+        <button type="button" class="btn btn-outline-primary" style="flex: 1; font-size: 12px; padding: 8px;" onclick="setModelType('anime')">Anime/CGI</button>
+    </div>
+</div>
+
+<div style="margin-top: 20px;">
+    <p style="font-size: 14px; color: #9ca3af; margin-bottom: 5px;">AI Denoise Intensity</p>
+    <input type="range" min="0" max="100" value="0" style="width: 100%; accent-color: var(--accent);" oninput="setDenoise(this.value)">
+    <div style="display: flex; justify-content: space-between; font-size: 10px; color: #4b5563;">
+        <span>OFF</span>
+        <span>MAX</span>
+    </div>
+</div>
     </style>
 </head>
 
