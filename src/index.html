@@ -8,126 +8,113 @@
     <script defer src="main.js"></script>
     
     <style>
-        :root { --bg: #111827; --surface: #1f2937; --text: #f3f4f6; --accent: #3b82f6; }
-        body { background-color: var(--bg); color: var(--text); font-family: system-ui, sans-serif; margin: 0; display: flex; height: 100vh; overflow: hidden; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #4B5563; border-radius: 4px; }
+        :root { --bg: #0a0a0c; --card: #16161a; --accent: #3b82f6; --text: #e5e7eb; --border: #2d2d35; }
         
-        #sidebar { width: 350px; background-color: var(--surface); padding: 24px; border-right: 1px solid #374151; overflow-y: auto; display: flex; flex-direction: column; z-index: 50; }
-        #workspace { flex-grow: 1; background-color: #000; position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        body { background-color: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; align-items: center; justify-content: center; }
         
-        #title, #hero-text, #footer { display: none !important; }
+        /* The Secret Sauce: We style the original IDs directly */
+        #title { color: var(--accent); font-size: 2.5rem; font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -1px; }
+        #hero-text { color: #9ca3af; max-width: 600px; text-align: center; margin-bottom: 2rem; font-size: 1rem; }
         
-        .btn { background: var(--accent); color: white; padding: 12px 20px; border-radius: 6px; border: none; cursor: pointer; width: 100%; font-weight: bold; margin-top: 10px; transition: 0.2s; }
-        .btn:hover { opacity: 0.8; }
-        .btn-outline-primary { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+        /* Main Container */
+        .panel { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 40px; width: 100%; max-width: 680px; box-sizing: border-box; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
         
-        .btn-check { display: none; }
-        .btn-check:checked + label { background: var(--accent); color: white; }
-        label.btn { display: inline-block; width: 31%; text-align: center; margin: 1%; background: #374151; font-size: 12px; padding: 10px 0; border: 1px solid #4B5563; }
+        #file-load-panel { text-align: center; }
+        #start-panel { width: 100%; max-width: 900px; height: auto; min-height: 600px; }
+        
+        /* Buttons */
+        .btn, #input-button, #download { background: var(--accent); color: white; border: none; padding: 14px 28px; border-radius: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; font-size: 1rem; }
+        #input-button { display: inline-block; margin: 20px auto; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(59, 130, 246, 0.4); }
 
-        #image-compare-outer { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        #image-compare { width: 100%; max-width: 1200px; aspect-ratio: 16/9; }
-        canvas { object-fit: contain; }
+        /* Quality Settings */
+        #settings { background: #1c1c22; padding: 20px; border-radius: 16px; margin: 20px 0; border: 1px solid var(--border); }
+        .btn-check { display: none; }
+        label.btn-outline-primary { display: inline-block; padding: 10px 20px; border: 1px solid var(--border); border-radius: 8px; margin: 0 5px; cursor: pointer; color: #9ca3af; font-size: 0.9rem; }
+        .btn-check:checked + label { background: var(--accent); color: white; border-color: var(--accent); }
+
+        /* Progress Bar */
+        #info { margin-top: 20px; }
+        .progress { background: #2d2d35; border-radius: 100px; height: 10px; overflow: hidden; margin-top: 10px; }
+        .progress-bar { background: var(--accent); height: 100%; transition: width 0.3s; box-shadow: 0 0 15px var(--accent); }
+
+        /* Canvas Comparison */
+        #image-compare-outer { width: 100%; border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: #000; margin-bottom: 20px; position: relative; }
+        #image-compare { cursor: ew-resize; }
+        
+        #footer { position: fixed; bottom: 20px; font-size: 0.8rem; color: #4b5563; }
+        #footer a { color: var(--accent); text-decoration: none; }
+
+        /* Loading Spinner */
+        #loading-panel img { filter: invert(1); width: 80px; }
     </style>
 </head>
 
 <body x-data="{}" style="display: none;">
-    
-    <h1 id="title"></h1>
-    <p id="hero-text"></p>
-    <div id="footer"></div>
 
-    <div id="sidebar">
-        <h2 style="color: var(--accent); font-size: 24px; font-weight: bold; margin-bottom: 30px; margin-top: 0;">SurafIX <span style="color: white; font-size: 12px; font-weight: normal; letter-spacing: 2px; opacity: 0.7; display: block; margin-top: 4px;">NEURAL STUDIO</span></h2>
+    <h1 id="title">SurafIX <span style="font-weight: 300; opacity: 0.6;">Studio</span></h1>
+    <p id="hero-text">Pro-grade AI upscaling, powered by your browser's GPU. No servers. No limits.</p>
 
-        <div id="file-load-panel" x-show="$store.state === 'init'">
-            <label style="font-size: 14px; color: #9ca3af; margin-bottom: 8px; display: block;">Source Media</label>
-            <button type="button" class="btn" id="input-button" onclick="chooseFile(this)" style="background: #111827; border: 1px dashed #4b5563; color: #d1d5db; padding: 20px;">+ Choose Video File</button>
+    <div id="file-load-panel" class="panel" x-show="$store.state === 'init'">
+        <p style="font-size: 1.2rem; margin-bottom: 10px;">Ready to enhance?</p>
+        <p style="color: #6b7280; font-size: 0.9rem;">Drop a video or image to begin neural processing</p>
+        <button type="button" id="input-button" onclick="chooseFile(this)">Select Source Media</button>
+    </div>
+
+    <div id="start-panel" class="panel" x-show="$store.state === 'preview' || $store.state === 'processing' || $store.state === 'complete'" style="display: none;">
+        
+        <div id="image-compare-outer">
+            <div id="image-compare">
+                <canvas id="original"></canvas>
+                <canvas id="upscaled"></canvas>
+            </div>
         </div>
 
         <div id="preview" x-show="$store.state === 'preview'">
-            <div style="background: #111827; padding: 15px; border-radius: 8px; margin-bottom: 24px; border: 1px solid #374151;">
-                <p style="font-size: 10px; color: #9ca3af; text-transform: uppercase;">Active File:</p>
-                <p style="font-family: monospace; color: var(--accent); font-size: 14px; word-break: break-all; margin: 4px 0;" x-text="$store.filename"></p>
-                <p style="font-size: 12px; color: #6b7280; margin-top: 8px;">Output: <span x-text="$store.width*2" style="color: white;"></span>x<span x-text="$store.height*2" style="color: white;"></span> (~<span x-text="$store.size" style="color: white;"></span>)</p>
+            <div id="settings">
+                <p style="margin-top: 0; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #6b7280;">Neural Network Model</p>
+                <input type="radio" class="btn-check" name="options" id="option1" value="small" onclick="switchNetworkSize(this);" />
+                <label class="btn-outline-primary" for="option1">Fast (Small)</label>
+
+                <input type="radio" class="btn-check" name="options" id="option2" value="medium" onclick="switchNetworkSize(this);" checked="checked" />
+                <label class="btn-outline-primary" for="option2">Balanced (Medium)</label>
+
+                <input type="radio" class="btn-check" name="options" id="option3" value="large" onclick="switchNetworkSize(this);" />
+                <label class="btn-outline-primary" for="option3">Ultra (Large)</label>
             </div>
 
-            <div id="settings" style="margin-bottom: 24px;">
-                <p style="font-size: 14px; color: #9ca3af; margin-bottom: 10px;">Neural Network Weights</p>
-                <div style="background: #111827; padding: 4px; border-radius: 8px; border: 1px solid #374151;">
-                    <input type="radio" class="btn-check" name="options" id="option1" value="small" onclick="switchNetworkSize(this);" autocomplete="off" />
-                    <label class="btn btn-outline-primary" for="option1">Small</label>
-                    
-                    <input type="radio" class="btn-check" name="options" id="option2" value="medium" onclick="switchNetworkSize(this);" autocomplete="off" checked="checked" />
-                    <label class="btn btn-outline-primary" for="option2">Medium</label>
-                    
-                    <input type="radio" class="btn-check" name="options" id="option3" value="large" onclick="switchNetworkSize(this);" autocomplete="off" />
-                    <label class="btn btn-outline-primary" for="option3">Large</label>
-                </div>
-            </div>
-
-            <button type="button" class="btn" onclick="initRecording()" x-show="$store.target === 'writer'">Choose Output Location</button>
-            <button type="button" class="btn" onclick="initRecording()" x-show="$store.target === 'blob'">Start AI Upscale</button>
+            <button type="button" class="btn" style="width: 100%;" onclick="initRecording()" x-show="$store.target === 'blob'">Begin AI Upscale</button>
         </div>
 
-        <div id="info" x-show="$store.state === 'processing'" style="background: #111827; padding: 15px; border-radius: 8px; border: 1px solid rgba(59,130,246,0.3);">
-            <p style="font-size: 12px; display: flex; justify-content: space-between; margin: 0;">
-                <span style="color: var(--accent); font-weight: bold; text-transform: uppercase; letter-spacing: 1px;">Rendering</span>
-                <span style="font-family: monospace; color: #9ca3af;" x-text="$store.eta"></span>
-            </p>
-            <div style="width: 100%; background: #374151; border-radius: 4px; height: 8px; margin-top: 12px; overflow: hidden;">
-                <div id="progress" style="background: var(--accent); height: 100%; transition: width 0.3s; box-shadow: 0 0 10px rgba(59,130,246,0.8);" x-bind:style="{width: $store.progress + '%'}"></div>
+        <div id="info" x-show="$store.state === 'processing'">
+            <div style="display: flex; justify-content: space-between; font-family: monospace; font-size: 0.8rem;">
+                <span>NEURAL RENDERING IN PROGRESS</span>
+                <span x-text="$store.eta"></span>
+            </div>
+            <div class="progress">
+                <div id="progress" class="progress-bar" x-bind:style="{width: $store.progress + '%'}"></div>
             </div>
         </div>
 
-        <div id="download-link" x-show="$store.state === 'complete'" style="margin-top: 20px;">
-            <p x-show="$store.target=='writer'" style="font-size: 12px; color: #9ca3af; margin-bottom: 10px;">Saved to <span x-text="$store.download_name" style="color: white; font-family: monospace;"></span></p>
+        <div id="download-link" x-show="$store.state === 'complete'" style="margin-top: 20px; text-align: center;">
             <a x-bind:href="$store.download_url" x-bind:download="$store.download_name" x-show="$store.target=='blob'">
-                <button type="button" class="btn" style="background: #10b981; box-shadow: 0 0 15px rgba(16,185,129,0.3);" id="download">Download Video</button>
+                <button type="button" class="btn" id="download" style="background: #10b981;">Download Enhanced File</button>
             </a>
-            <button type="button" class="btn btn-outline-primary" onclick="location.reload();">Process Another</button>
-        </div>
-        
-        <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid #374151; font-family: monospace; font-size: 10px; color: #6b7280; display: flex; justify-content: space-between;">
-            <span>Engine: WebGPU</span>
-            <span x-text="$store.state" style="color: #10b981; text-transform: uppercase;"></span>
+            <button type="button" class="btn" style="background: transparent; border: 1px solid #374151; margin-top: 10px;" onclick="location.reload();">Process New File</button>
         </div>
     </div>
 
-    <div id="workspace">
-        <div id="unsupported-panel" x-show="$store.state === 'unsupported'" style="color: #ef4444; background: #450a0a; padding: 20px; border-radius: 8px; z-index: 30; position: absolute;">
-            Your browser does not support <span id="missing-component" x-text="$store.component" style="font-weight: bold; color: white;"></span>.
-        </div>
-        <div id="error-panel" x-show="$store.state === 'error'" style="color: #ef4444; background: #450a0a; padding: 20px; border-radius: 8px; z-index: 30; position: absolute;">
-            Error processing video: <span x-text="$store.error" style="font-family: monospace;"></span>
-        </div>
-
-        <div id="loading-panel" x-show="$store.state === 'loading'" style="color: var(--accent); font-family: monospace; letter-spacing: 2px; text-align: center; z-index: 30; position: absolute;">
-            <svg style="width: 40px; height: 40px; margin: 0 auto 15px; animation: spin 1s linear infinite;" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle style="opacity: 0.25;" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path style="opacity: 0.75;" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-            BOOTING NEURAL ENGINE
-        </div>
-        <style>@keyframes spin { 100% { transform: rotate(360deg); } }</style>
-
-        <div id="start-panel" x-show="$store.state === 'preview' || $store.state === 'processing' || $store.state === 'complete'" style="width: 100%; height: 100%; position: absolute; display: flex; align-items: center; justify-content: center;">
-            <div id="image-compare-outer">
-                <div id="image-compare">
-                    <canvas id="original"></canvas>
-                    <canvas id="upscaled"></canvas>
-                </div>
-            </div>
-            <img src="full-screen.svg" id="full-screen" onclick="fullScreenPreview()" x-show="$store.state === 'preview'" style="position: absolute; top: 20px; right: 20px; cursor: pointer; width: 32px; height: 32px; background: rgba(0,0,0,0.6); padding: 6px; border-radius: 6px; border: 1px solid #4b5563; z-index: 40;" />
-        </div>
-        
-        <div x-show="$store.state === 'init'" style="opacity: 0.3; text-align: center; font-family: monospace; letter-spacing: 2px; color: white;">
-            <svg style="width: 80px; height: 80px; margin: 0 auto 15px;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg>
-            AWAITING SOURCE MEDIA
-        </div>
+    <div id="loading-panel" x-show="$store.state === 'loading'" style="display: none;">
+        <p style="font-family: monospace; letter-spacing: 3px; color: var(--accent);">INITIALIZING WEBGPU...</p>
     </div>
     
-    <script>
-        console.log("%c[SurafIX Engine]: WebGPU Backend Initialized Successfully 🚀", "color: #3b82f6; font-size: 14px; font-weight: bold; font-family: monospace; padding: 4px; border: 1px solid #3b82f6; border-radius: 4px;");
-        console.log("%c[Status]: Neural weights mapped. Awaiting source media...", "color: #10b981; font-family: monospace; font-size: 12px;");
-    </script>
+    <div id="unsupported-panel" x-show="$store.state === 'unsupported'" style="display: none; color: #ef4444;">
+        WebGPU is not enabled in your browser.
+    </div>
+
+    <div id="footer">
+        © 2026 SurafIX Neural Studio | <a href="https://github.com/sb2702/free-ai-video-upscaler">Open Source Engine</a>
+    </div>
+
 </body>
 </html>
