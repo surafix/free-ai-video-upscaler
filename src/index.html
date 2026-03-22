@@ -19,7 +19,7 @@
 
 <body x-data="{}" class="bg-gray-900 text-gray-100 h-screen overflow-hidden flex">
 
-    <aside class="w-80 bg-gray-800 border-r border-gray-700 flex flex-col transition-all duration-300 relative z-20 shadow-2xl">
+    <aside class="w-80 shrink-0 bg-gray-800 border-r border-gray-700 flex flex-col transition-all duration-300 relative z-20 shadow-2xl">
         <div class="p-6 flex-grow flex flex-col">
             <h1 class="text-2xl font-bold tracking-wider text-blue-400 mb-8">SurafIX <span class="text-white text-sm font-light uppercase tracking-widest block opacity-70 mt-1">Neural Studio</span></h1>
             
@@ -45,15 +45,15 @@
                 <label class="block text-sm font-medium text-gray-400 mb-2">Neural Network Weights</label>
                 <div class="flex gap-2 bg-gray-900 p-1 rounded-lg border border-gray-700">
                     <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="options" value="small" onclick="forceLivePreview(this);" class="peer hidden">
+                        <input type="radio" name="options" id="option1" value="small" onclick="switchNetworkSize(this);" class="peer hidden">
                         <div class="py-2 text-center text-xs font-bold rounded-md peer-checked:bg-blue-600 peer-checked:text-white text-gray-400 transition-all">Small</div>
                     </label>
                     <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="options" value="medium" onclick="forceLivePreview(this);" class="peer hidden" checked>
+                        <input type="radio" name="options" id="option2" value="medium" onclick="switchNetworkSize(this);" class="peer hidden" checked>
                         <div class="py-2 text-center text-xs font-bold rounded-md peer-checked:bg-blue-600 peer-checked:text-white text-gray-400 transition-all">Medium</div>
                     </label>
                     <label class="flex-1 cursor-pointer">
-                        <input type="radio" name="options" value="large" onclick="forceLivePreview(this);" class="peer hidden">
+                        <input type="radio" name="options" id="option3" value="large" onclick="switchNetworkSize(this);" class="peer hidden">
                         <div class="py-2 text-center text-xs font-bold rounded-md peer-checked:bg-blue-600 peer-checked:text-white text-gray-400 transition-all">Large</div>
                     </label>
                 </div>
@@ -97,7 +97,7 @@
         </div>
     </aside>
 
-    <main class="flex-grow bg-black relative flex items-center justify-center overflow-hidden">
+    <main class="flex-grow bg-black relative flex items-center justify-center p-8 overflow-hidden">
         
         <div x-show="$store.state === 'init'" class="absolute inset-0 flex flex-col items-center justify-center text-gray-700 z-10">
             <svg class="w-24 h-24 mb-4 opacity-20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z"></path></svg>
@@ -109,10 +109,11 @@
             <p class="font-mono text-sm text-blue-400 tracking-widest">BOOTING NEURAL ENGINE</p>
         </div>
 
-        <div id="image-compare-outer" class="relative w-full max-w-6xl aspect-video bg-gray-900 shadow-2xl rounded-lg overflow-hidden z-20" x-show="$store.state === 'preview' || $store.state === 'processing' || $store.state === 'complete'" style="display: none;">
-            <div id="image-compare" class="w-full h-full">
-                <canvas id="original" class="w-full h-full object-contain"></canvas>
-                <canvas id="upscaled" class="w-full h-full object-contain"></canvas>
+        <div id="image-compare-outer" class="relative w-full h-full flex items-center justify-center z-20" x-show="$store.state === 'preview' || $store.state === 'processing' || $store.state === 'complete'" style="display: none;">
+            
+            <div id="image-compare">
+                <canvas id="original"></canvas>
+                <canvas id="upscaled"></canvas>
             </div>
             
             <button onclick="fullScreenPreview()" x-show="$store.state === 'preview'" class="absolute top-4 right-4 bg-black/60 hover:bg-black/90 p-2 rounded text-white z-30 transition-all border border-gray-600 backdrop-blur-sm">
@@ -121,22 +122,5 @@
         </div>
     </main>
 
-    <script>
-        function forceLivePreview(radioElement) {
-            // 1. Tell the engine to swap the math weights
-            if (typeof switchNetworkSize === 'function') {
-                switchNetworkSize(radioElement);
-            }
-            
-            // 2. Wait 150ms for the new JSON to load into memory, then nudge the video
-            setTimeout(() => {
-                const videos = document.getElementsByTagName('video');
-                if (videos.length > 0) {
-                    // Moving the video timeline by 1 millisecond forces WebGPU to draw the new frame!
-                    videos[0].currentTime += 0.001; 
-                }
-            }, 150);
-        }
-    </script>
 </body>
 </html>
